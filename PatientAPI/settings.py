@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'rest_framework',
+    'patient',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -74,10 +75,23 @@ WSGI_APPLICATION = 'PatientAPI.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+from decouple import config
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('POSTGRES_DB'),  # Set to your PostgreSQL database name
+        'USER': config('POSTGRES_USER'),  # Set to your PostgreSQL username
+        'PASSWORD': config('POSTGRES_PASSWORD'),  # Set to your PostgreSQL password
+        'HOST': 'localhost',  # Set to your PostgreSQL host if different
+        'PORT': '5432',        # Default PostgreSQL port
     }
 }
 
