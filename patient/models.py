@@ -7,9 +7,8 @@ class CustomUser(AbstractUser):
         ('Doctor', 'Doctor'),
         ('Patient', 'Patient')
     ]
-    role = models.CharField(max_length=10, choices=role, default='Patient')
-    jwt_token = models.CharField(max_length=500, default='')
-
+    role = models.CharField(max_length=10, choices=role)
+    
     def __str__(self):
         return self.username
 
