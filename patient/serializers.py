@@ -1,24 +1,31 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from .models import PatientRecord, Department, CustomUser
 
 User = get_user_model()
 
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'role', 'department')
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
+    department = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), required=False)
 
     class Meta:
         model = User
-        fields = ('username', 'password', 'role')
+        fields = ('username', 'password', 'role', 'department')
 
     def create(self, validated_data):
         user = User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
-            role=validated_data['role']
+            role=validated_data['role'],
+            department=validated_data.get('department')
         )
         return user
-
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
@@ -32,14 +39,10 @@ class UserLoginSerializer(serializers.Serializer):
         if user and user.is_active:
             return user
         raise serializers.ValidationError('Invalid credentials')
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'role')
-
-from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+        fields = ('id', 'username', 'role', 'department')
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
@@ -63,3 +66,19 @@ class LogoutSerializer(serializers.Serializer):
             refresh_token.blacklist()  # This works if blacklisting is enabled
         except TokenError:
             self.fail('invalid_token')
+
+class PatientRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientRecord
+        fields = '__all__'
+    def validate(self, attrs):
+        user = self.context['request'].user
+        if user.role == 'doctor':
+            if user.department != attrs.get('department'):
+                raise serializers.ValidationError("Doctor can only access records from their own department.")
+        return attrs
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = '__all__'
